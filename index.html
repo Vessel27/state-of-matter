@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>States of Matter: Interactive Cycle</title>
+    <style>
+        :root {
+            --solid-color: #3498db;
+            --liquid-color: #2ecc71;
+            --gas-color: #e74c3c;
+            --bg-color: #0a0e27;
+            --card-bg: #1a1f3a;
+            --text-color: #f8fafc;
+            --accent: #00d4ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1428 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%);
+            border-bottom: 2px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(52, 152, 219, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(46, 204, 113, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #00d4ff, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        header p {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: #cbd5e1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: clamp(1rem, 3vw, 2rem);
+            width: 100%;
+        }
+
+        /* Main Cycle Section */
+        .cycle-section {
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+            border-radius: clamp(1rem, 3vw, 2rem);
+            padding: clamp(1.5rem, 4vw, 3rem);
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            backdrop-filter: blur(10px);
+            width: 100%;
+        }
+
+        .cycle-section h2 {
+            text-align: center;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            margin-bottom: 2rem;
+            background: linear-gradient(to right, var(--accent), var(--solid-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cycle-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Cycle Diagram */
+        .cycle-diagram {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+            margin: 0 auto;
+        }
+
+        .cycle-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 10px 30px rgba(0, 212, 255, 0.2));
+        }
+
+        /* State Boxes */
+        .state-box {
+            position: absolute;
+            width: clamp(90px, 18vw, 160px);
+            height: clamp(90px, 18vw, 160px);
+            border-radius: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            border: 3px solid;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            overflow: hidden;
+            gap: 0.5rem;
+            z-index: 5;
+        }
+
+        .state-box:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+
+        /* Active/Clicked State for Boxes */
+        .state-box.active {
+            border-width: 5px;
+            box-shadow: 0 0 30px currentColor;
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        /* Maintain Gas Box Centering when Active */
+        .gas-box.active {
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .state-box-icon {
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            line-height: 1;
+        }
+
+        .state-box-label {
+            font-size: clamp(0.9rem, 3vw, 1.3rem);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .solid-box {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-color: #3498db;
+            bottom: 8%;
+            right: 5%;
+            box-shadow: 0 15px 50px rgba(52, 152, 219, 0.4);
+            color: #3498db;
+        }
+        
+        .solid-box .state-box-label { color: white; }
+
+        .liquid-box {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border-color: #2ecc71;
+            bottom: 8%;
+            left: 5%;
+            box-shadow: 0 15px 50px rgba(46, 204, 113, 0.4);
+            color: #2ecc71;
+        }
+        
+        .liquid-box .state-box-label { color: white; }
+
+        .gas-box {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-color: #e74c3c;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 15px 50px rgba(231, 76, 60, 0.4);
+            color: #e74c3c;
+        }
+        
+        .gas-box .state-box-label { color: white; }
+
+        /* Transition Arrows */
+        .arrow-label {
+            position: absolute;
+            font-weight: bold;
+            font-size: clamp(0.7rem, 2.5vw, 1rem);
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+            padding: clamp(0.5rem, 1.5vw, 0.8rem) clamp(0.8rem, 2.5vw, 1.3rem);
+            border-radius: 1rem;
+            border: 2px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            white-space: nowrap;
+        }
+
+        .arrow-label:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+        }
+
+        .arrow-label.active {
+            background: var(--accent);
+            color: var(--bg-color) !important;
+            border-color: white;
+            transform: scale(1.15);
+            box-shadow: 0 0 20px var(--accent);
+        }
+
+        .melting {
+            bottom: 20%;
+            left: 30%;
+            border-color: #e74c3c;
+            color: #ff6b6b;
+        }
+
+        .freezing {
+            bottom: 20%;
+            right: 30%;
+            border-color: #3498db;
+            color: #74b9ff;
+        }
+
+        .evaporation {
+            left: 1%;
+            top: 48%;
+            border-color: #e74c3c;
+            color: #ff6b6b;
+        }
+
+        .condensation {
+            left: 10%;
+            top: 15%;
+            border-color: #3498db;
+            color: #74b9ff;
+        }
+
+        .sublimation {
+            right: 1%;
+            top: 48%;
+            border-color: #e74c3c;
+            color: #ff6b6b;
+        }
+
+        .deposition {
+            right: 10%;
+            top: 15%;
+            border-color: #3498db;
+            color: #74b9ff;
+        }
+
+        /* Information Panel */
+        .info-panel {
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+            padding: clamp(1.5rem, 3vw, 2.5rem);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 2;
+        }
+
+        .info-content {
+            display: none;
+        }
+
+        .info-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-content h3 {
+            font-size: clamp(1.3rem, 4vw, 2rem);
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent), currentColor);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-content p {
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            color: #cbd5e1;
+            margin-bottom: 0.8rem;
+            line-height: 1.8;
+        }
+
+        .info-content strong {
+            color: var(--accent);
+        }
+
+        /* Particle Simulation Section */
+        .particle-section {
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+            border-radius: clamp(1rem, 3vw, 2rem);
+            padding: clamp(1.5rem, 4vw, 3rem);
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .particle-section h2 {
+            text-align: center;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            margin-bottom: 2rem;
+            background: linear-gradient(to right, var(--accent), var(--solid-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .particle-box {
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
+            border: 2px solid;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 500px;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .particle-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+
+        .particle-box h3 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .particle-canvas {
+            width: 100%;
+            height: 300px;
+            border-radius: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            display: block;
+            margin-bottom: 1.5rem;
+        }
+
+        .particle-description {
+            font-size: 1rem;
+            color: #cbd5e1;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .solid-particle-box {
+            border-color: #3498db;
+            box-shadow: 0 15px 40px rgba(52, 152, 219, 0.3);
+        }
+
+        .solid-particle-box h3 {
+            color: #3498db;
+        }
+
+        .liquid-particle-box {
+            border-color: #2ecc71;
+            box-shadow: 0 15px 40px rgba(46, 204, 113, 0.3);
+        }
+
+        .liquid-particle-box h3 {
+            color: #2ecc71;
+        }
+
+        .gas-particle-box {
+            border-color: #e74c3c;
+            box-shadow: 0 15px 40px rgba(231, 76, 60, 0.3);
+        }
+
+        .gas-particle-box h3 {
+            color: #e74c3c;
+        }
+
+        .particle-box.hidden {
+            display: none;
+        }
+
+        /* Responsive Grid */
+        @media (min-width: 1024px) {
+            .cycle-wrapper {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 3rem;
+                align-items: center;
+            }
+
+            .info-panel {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cycle-section {
+                padding: 1.5rem;
+            }
+
+            .arrow-label {
+                padding: 0.4rem 0.7rem;
+            }
+
+            .melting {
+                bottom: 18%;
+                left: 28%;
+            }
+
+            .freezing {
+                bottom: 18%;
+                right: 28%;
+            }
+
+            .evaporation {
+                left: -1%;
+                top: 45%;
+                font-size: 0.7rem;
+            }
+
+            .condensation {
+                left: 7%;
+                top: 12%;
+            }
+
+            .sublimation {
+                right: -1%;
+                top: 45%;
+                font-size: 0.7rem;
+            }
+
+            .deposition {
+                right: 7%;
+                top: 12%;
+            }
+
+            .particle-canvas {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 1.5rem 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .cycle-section {
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .cycle-section h2 {
+                font-size: 1.3rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .arrow-label {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.5rem;
+            }
+
+            .melting, .freezing {
+                bottom: 16%;
+            }
+
+            .info-panel {
+                min-height: 250px;
+                padding: 1rem;
+            }
+
+            .info-content p {
+                font-size: 0.8rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .particle-canvas {
+                height: 200px;
+            }
+
+            .particle-box {
+                padding: 1rem;
+            }
+
+            .particle-box h3 {
+                font-size: 1.2rem;
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: clamp(1.5rem, 3vw, 3rem);
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚛️ States of Matter</h1>
+        <p>Explore the dynamic transitions between Solid, Liquid, and Gas</p>
+    </header>
+
+    <div class="container">
+        <section class="cycle-section">
+            <h2>The Phase Transition Cycle</h2>
+            
+            <div class="cycle-wrapper">
+                <!-- Cycle Diagram -->
+                <div class="cycle-diagram">
+                    <svg class="cycle-svg" viewBox="0 0 600 600" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0;">
+                        <defs>
+                            <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#ff6b6b" />
+                            </marker>
+                            <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#74b9ff" />
+                            </marker>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- Melting (Solid to Liquid) -->
+                        <path d="M 350 500 Q 300 530 250 500" stroke="#ff6b6b" stroke-width="5" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="8,4" filter="url(#glow)" opacity="0.8" />
+
+                        <!-- Freezing (Liquid to Solid) -->
+                        <path d="M 250 500 Q 300 530 350 500" stroke="#74b9ff" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="8,4" filter="url(#glow)" opacity="0.8" />
+
+                        <!-- Evaporation (Liquid to Gas) -->
+                        <path d="M 200 450 Q 150 300 200 150" stroke="#ff6b6b" stroke-width="5" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="8,4" filter="url(#glow)" opacity="0.8" />
+
+                        <!-- Condensation (Gas to Liquid) -->
+                        <path d="M 200 150 Q 150 300 200 450" stroke="#74b9ff" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="8,4" filter="url(#glow)" opacity="0.8" />
+
+                        <!-- Sublimation (Solid to Gas) -->
+                        <path d="M 400 450 Q 450 300 400 150" stroke="#ff6b6b" stroke-width="5" fill="none" marker-end="url(#arrowRed)" stroke-dasharray="8,4" filter="url(#glow)" opacity="0.8" />
+
+                        <!-- Deposition (Gas to Solid) -->
+                        <path d="M 400 150 Q 450 300 400 450" stroke="#74b9ff" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="8,4" filter="url(#glow)" opacity="0.8" />
+                    </svg>
+
+                    <!-- State Boxes with Icons -->
+                    <div class="state-box solid-box" onclick="showInfo('solid', this, 'solid')">
+                        <div class="state-box-icon">❄️</div>
+                        <div class="state-box-label">Solid</div>
+                    </div>
+
+                    <div class="state-box liquid-box" onclick="showInfo('liquid', this, 'liquid')">
+                        <div class="state-box-icon">💧</div>
+                        <div class="state-box-label">Liquid</div>
+                    </div>
+
+                    <div class="state-box gas-box" onclick="showInfo('gas', this, 'gas')">
+                        <div class="state-box-icon">☁️</div>
+                        <div class="state-box-label">Gas</div>
+                    </div>
+
+                    <!-- Transition Labels -->
+                    <div class="arrow-label melting" onclick="showInfo('melting', this)">🔥 Melting</div>
+                    <div class="arrow-label freezing" onclick="showInfo('freezing', this)">❄️ Freezing</div>
+                    <div class="arrow-label evaporation" onclick="showInfo('evaporation', this)">🌡️ Evaporation</div>
+                    <div class="arrow-label condensation" onclick="showInfo('condensation', this)">💧 Condensation</div>
+                    <div class="arrow-label sublimation" onclick="showInfo('sublimation', this)">⬆️ Sublimation</div>
+                    <div class="arrow-label deposition" onclick="showInfo('deposition', this)">⬇️ Deposition</div>
+                </div>
+
+                <!-- Information Panel -->
+                <div class="info-panel">
+                    <div id="solid" class="info-content active">
+                        <h3>Solid ❄️</h3>
+                        <p><strong>Shape & Volume:</strong> Definite shape and volume</p>
+                        <p><strong>Particle Arrangement:</strong> Tightly packed in a fixed, ordered structure</p>
+                        <p><strong>Particle Motion:</strong> Vibrate in place, minimal movement</p>
+                        <p><strong>Density:</strong> High</p>
+                        <p><strong>Examples:</strong> Ice, Rock, Metal, Wood, Diamond</p>
+                    </div>
+
+                    <div id="liquid" class="info-content">
+                        <h3>Liquid 💧</h3>
+                        <p><strong>Shape & Volume:</strong> Definite volume, takes shape of container</p>
+                        <p><strong>Particle Arrangement:</strong> Close together but not in fixed positions</p>
+                        <p><strong>Particle Motion:</strong> Can slide past each other, moderate movement</p>
+                        <p><strong>Density:</strong> Medium to High</p>
+                        <p><strong>Examples:</strong> Water, Oil, Milk, Juice, Mercury</p>
+                    </div>
+
+                    <div id="gas" class="info-content">
+                        <h3>Gas ☁️</h3>
+                        <p><strong>Shape & Volume:</strong> No definite shape or volume, fills entire container</p>
+                        <p><strong>Particle Arrangement:</strong> Far apart, random distribution</p>
+                        <p><strong>Particle Motion:</strong> Move rapidly in all directions</p>
+                        <p><strong>Density:</strong> Low</p>
+                        <p><strong>Examples:</strong> Air, Oxygen, Carbon Dioxide, Helium, Steam</p>
+                    </div>
+
+                    <div id="melting" class="info-content">
+                        <h3>Melting 🔥</h3>
+                        <p><strong>Process:</strong> Solid → Liquid</p>
+                        <p><strong>Energy:</strong> Heat energy is <strong>ADDED</strong></p>
+                        <p><strong>What Happens:</strong> Particles gain energy and vibrate more vigorously, breaking free from their fixed positions. The solid structure breaks down and becomes a liquid.</p>
+                        <p><strong>Example:</strong> Ice melting into water at 0°C</p>
+                    </div>
+
+                    <div id="freezing" class="info-content">
+                        <h3>Freezing ❄️</h3>
+                        <p><strong>Process:</strong> Liquid → Solid</p>
+                        <p><strong>Energy:</strong> Heat energy is <strong>REMOVED</strong></p>
+                        <p><strong>What Happens:</strong> Particles lose energy and slow down, allowing them to settle into a fixed, ordered arrangement. The liquid becomes a solid.</p>
+                        <p><strong>Example:</strong> Water freezing into ice at 0°C</p>
+                    </div>
+
+                    <div id="evaporation" class="info-content">
+                        <h3>Evaporation 🌡️</h3>
+                        <p><strong>Process:</strong> Liquid → Gas</p>
+                        <p><strong>Energy:</strong> Heat energy is <strong>ADDED</strong></p>
+                        <p><strong>What Happens:</strong> Particles gain enough energy to overcome intermolecular forces and escape from the liquid surface, becoming a gas.</p>
+                        <p><strong>Example:</strong> Water boiling into steam at 100°C</p>
+                    </div>
+
+                    <div id="condensation" class="info-content">
+                        <h3>Condensation 💧</h3>
+                        <p><strong>Process:</strong> Gas → Liquid</p>
+                        <p><strong>Energy:</strong> Heat energy is <strong>REMOVED</strong></p>
+                        <p><strong>What Happens:</strong> Particles lose energy and slow down, allowing them to form intermolecular bonds and become a liquid.</p>
+                        <p><strong>Example:</strong> Steam condensing into water droplets</p>
+                    </div>
+
+                    <div id="sublimation" class="info-content">
+                        <h3>Sublimation ⬆️</h3>
+                        <p><strong>Process:</strong> Solid → Gas (skips liquid phase)</p>
+                        <p><strong>Energy:</strong> Heat energy is <strong>ADDED</strong></p>
+                        <p><strong>What Happens:</strong> Particles gain enough energy to go directly from a solid to a gas without passing through the liquid phase.</p>
+                        <p><strong>Example:</strong> Dry ice turning into CO₂ gas</p>
+                    </div>
+
+                    <div id="deposition" class="info-content">
+                        <h3>Deposition ⬇️</h3>
+                        <p><strong>Process:</strong> Gas → Solid (skips liquid phase)</p>
+                        <p><strong>Energy:</strong> Heat energy is <strong>REMOVED</strong></p>
+                        <p><strong>What Happens:</strong> Particles lose energy and go directly from a gas to a solid without passing through the liquid phase.</p>
+                        <p><strong>Example:</strong> Water vapor forming frost on surfaces</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Particle Simulation Section -->
+        <section class="particle-section">
+            <h2>Particle Behavior in Different States</h2>
+            
+            <!-- Solid Particles -->
+            <div class="particle-box solid-particle-box" id="solidParticleBox">
+                <h3>❄️ Solid</h3>
+                <canvas class="particle-canvas" id="solidCanvas"></canvas>
+                <p class="particle-description">Particles vibrate in fixed positions, tightly packed together with minimal movement.</p>
+            </div>
+
+            <!-- Liquid Particles -->
+            <div class="particle-box liquid-particle-box hidden" id="liquidParticleBox">
+                <h3>💧 Liquid</h3>
+                <canvas class="particle-canvas" id="liquidCanvas"></canvas>
+                <p class="particle-description">Particles flow and slide past each other, maintaining close proximity while moving freely.</p>
+            </div>
+
+            <!-- Gas Particles -->
+            <div class="particle-box gas-particle-box hidden" id="gasParticleBox">
+                <h3>☁️ Gas</h3>
+                <canvas class="particle-canvas" id="gasCanvas"></canvas>
+                <p class="particle-description">Particles move rapidly in all directions, spreading out to fill the entire container.</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 States of Matter Interactive Guide | Explore the science of phase transitions</p>
+    </footer>
+
+    <script>
+        let activeSimulation = null;
+
+        function showInfo(id, element, particleType = null) {
+            // Hide all info contents
+            const contents = document.querySelectorAll('.info-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Show selected content
+            const selected = document.getElementById(id);
+            if (selected) {
+                selected.classList.add('active');
+            }
+
+            // Update active state on clickable elements
+            const clickables = document.querySelectorAll('.state-box, .arrow-label');
+            clickables.forEach(el => el.classList.remove('active'));
+            
+            if (element) {
+                element.classList.add('active');
+            }
+
+            // Update particle display based on state
+            if (particleType) {
+                showParticleBox(particleType);
+            }
+        }
+
+        function showParticleBox(type) {
+            const solidBox = document.getElementById('solidParticleBox');
+            const liquidBox = document.getElementById('liquidParticleBox');
+            const gasBox = document.getElementById('gasParticleBox');
+
+            // Hide all boxes
+            solidBox.classList.add('hidden');
+            liquidBox.classList.add('hidden');
+            gasBox.classList.add('hidden');
+
+            // Show the selected box
+            if (type === 'solid') {
+                solidBox.classList.remove('hidden');
+                if (!activeSimulation || activeSimulation.type !== 'solid') {
+                    activeSimulation = new ParticleSimulation('solidCanvas', 'solid');
+                }
+            } else if (type === 'liquid') {
+                liquidBox.classList.remove('hidden');
+                if (!activeSimulation || activeSimulation.type !== 'liquid') {
+                    activeSimulation = new ParticleSimulation('liquidCanvas', 'liquid');
+                }
+            } else if (type === 'gas') {
+                gasBox.classList.remove('hidden');
+                if (!activeSimulation || activeSimulation.type !== 'gas') {
+                    activeSimulation = new ParticleSimulation('gasCanvas', 'gas');
+                }
+            }
+        }
+
+        // Particle System Class
+        class ParticleSimulation {
+            constructor(canvasId, type) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.type = type; // 'solid', 'liquid', or 'gas'
+                this.particles = [];
+                this.width = this.canvas.offsetWidth;
+                this.height = this.canvas.offsetHeight;
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+                this.animationId = null;
+                
+                this.initParticles();
+                this.animate();
+            }
+
+            initParticles() {
+                const particleCount = this.type === 'gas' ? 40 : 30;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    let particle;
+                    
+                    if (this.type === 'solid') {
+                        // Solid: particles in a grid pattern
+                        const gridSize = Math.ceil(Math.sqrt(particleCount));
+                        const cellWidth = this.width / gridSize;
+                        const cellHeight = this.height / gridSize;
+                        const row = Math.floor(i / gridSize);
+                        const col = i % gridSize;
+                        
+                        particle = {
+                            x: col * cellWidth + cellWidth / 2 + (Math.random() - 0.5) * 5,
+                            y: row * cellHeight + cellHeight / 2 + (Math.random() - 0.5) * 5,
+                            baseX: col * cellWidth + cellWidth / 2,
+                            baseY: row * cellHeight + cellHeight / 2,
+                            vx: 0,
+                            vy: 0,
+                            size: 4,
+                            color: '#3498db',
+                            vibrationAmount: 2
+                        };
+                    } else if (this.type === 'liquid') {
+                        // Liquid: particles flowing in waves
+                        particle = {
+                            x: Math.random() * this.width,
+                            y: Math.random() * this.height,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            size: 4,
+                            color: '#2ecc71'
+                        };
+                    } else {
+                        // Gas: particles moving rapidly in all directions
+                        particle = {
+                            x: Math.random() * this.width,
+                            y: Math.random() * this.height,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: (Math.random() - 0.5) * 4,
+                            size: 3,
+                            color: '#e74c3c'
+                        };
+                    }
+                    
+                    this.particles.push(particle);
+                }
+            }
+
+            update() {
+                if (this.type === 'solid') {
+                    this.updateSolid();
+                } else if (this.type === 'liquid') {
+                    this.updateLiquid();
+                } else {
+                    this.updateGas();
+                }
+            }
+
+            updateSolid() {
+                // Particles vibrate around fixed positions
+                this.particles.forEach(p => {
+                    p.x = p.baseX + (Math.sin(Date.now() * 0.002 + p.baseX) * p.vibrationAmount);
+                    p.y = p.baseY + (Math.cos(Date.now() * 0.002 + p.baseY) * p.vibrationAmount);
+                });
+            }
+
+            updateLiquid() {
+                // Particles flow with some cohesion
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Bounce off walls with damping
+                    if (p.x < 0 || p.x > this.width) {
+                        p.vx *= -0.8;
+                        p.x = Math.max(0, Math.min(this.width, p.x));
+                    }
+                    if (p.y < 0 || p.y > this.height) {
+                        p.vy *= -0.8;
+                        p.y = Math.max(0, Math.min(this.height, p.y));
+                    }
+
+                    // Slight friction
+                    p.vx *= 0.99;
+                    p.vy *= 0.99;
+
+                    // Random acceleration (but less than gas)
+                    p.vx += (Math.random() - 0.5) * 0.3;
+                    p.vy += (Math.random() - 0.5) * 0.3;
+
+                    // Limit velocity
+                    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                    if (speed > 2) {
+                        p.vx = (p.vx / speed) * 2;
+                        p.vy = (p.vy / speed) * 2;
+                    }
+                });
+            }
+
+            updateGas() {
+                // Particles move rapidly and spread out
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Bounce off walls elastically
+                    if (p.x < 0 || p.x > this.width) {
+                        p.vx *= -1;
+                        p.x = Math.max(0, Math.min(this.width, p.x));
+                    }
+                    if (p.y < 0 || p.y > this.height) {
+                        p.vy *= -1;
+                        p.y = Math.max(0, Math.min(this.height, p.y));
+                    }
+
+                    // Random acceleration (high energy)
+                    p.vx += (Math.random() - 0.5) * 0.6;
+                    p.vy += (Math.random() - 0.5) * 0.6;
+
+                    // Limit velocity
+                    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                    if (speed > 4) {
+                        p.vx = (p.vx / speed) * 4;
+                        p.vy = (p.vy / speed) * 4;
+                    }
+                });
+            }
+
+            draw() {
+                this.ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+
+                this.particles.forEach(p => {
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+            }
+
+            animate() {
+                this.update();
+                this.draw();
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const solidBox = document.querySelector('.solid-box');
+            showInfo('solid', solidBox, 'solid');
+        });
+    </script>
+</body>
+
+</html>
